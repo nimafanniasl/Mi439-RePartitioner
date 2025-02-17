@@ -22,8 +22,6 @@ jobs:
           cd Mi439_restore_original_partition_table
           zip -r ../Mi439_restore_original_partition_table.zip ./*
       - name: Go to the project root
-        run: |
-          cd ..
           ls
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
@@ -36,3 +34,5 @@ jobs:
             Mi439_repartition.zip
             Mi439_restore_original_partition_table.zip
           asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
