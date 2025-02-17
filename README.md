@@ -1,6 +1,6 @@
 # Mi439 Dynamic Partition Manager 🔧
 
-**A TWRP flashable tool for Mi439 Devices to resize system partition while preserving vendor space**
+**A TWRP flashable tool for Mi439 Devices to resize the system partition while preserving vendor space**
 
 ---
 
@@ -10,6 +10,13 @@
 - 🔄 **Restore Support** - Return to stock partition table
 - 📱 **TWRP Compatible** - Works with custom recoveries
 - 💾 **Auto-Formatting** - Creates fresh EXT4 filesystems
+
+---
+
+## 📥 Downloads
+[![Latest Release](https://img.shields.io/badge/download-latest-blue)](https://github.com/nimafanniasl/Mi439-RePartitioner/releases/latest)
+- `Mi439_repartition.zip` - Main tool
+- `Mi439_restore_original_partition_table.zip` - Stock layout restore
 
 ---
 
@@ -40,21 +47,12 @@
 ## ⚠️ Critical Warnings
 - **‼️ BREAKS DYNAMIC PARTITION SUPPORT**
   - After flashing repartition ZIP:
-    - **Can't install** GSIs/dynamic ROMs
+    - **Can't install** dynamic ROMs
     - **Must flash restore ZIP** first
 
 - **🔁 Repartitioning Rules**:
   - **Always restore** before changing sizes again
-  - **Never skip** format/verification steps
 
----
-
-## 📥 Downloads
-[![Latest Release](https://img.shields.io/badge/download-latest-blue)](https://github.com/nimafanniasl/Mi439-RePartitioner/releases/latest)
-- `Mi439_repartition.zip` - Main tool
-- `Mi439_restore_partitions.zip` - Stock layout restore
-
----
 
 ## 💬 Support
 **Found a bug?** Open an [issue](https://github.com/nimafanniasl/Mi439-RePartitioner/issues)
