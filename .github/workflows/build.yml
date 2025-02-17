@@ -1,36 +1,42 @@
 name: Release Automation
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  package-and-upload:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Create Repartition ZIP
-        run: |
-          cd Mi439_repartition
-          zip -r ../Mi439_repartition.zip ./*
+    - name: Create Mi439_repartition.zip
+      run: |
+        cd Mi439_repartition
+        zip -r ../Mi439_repartition.zip ./*
+      shell: bash
 
-      - name: Create Restore Partition ZIP
-        run: |
-          cd Mi439_restore_original_partition_table
-          zip -r ../Mi439_restore_original_partition_table.zip ./*
+    - name: Create Mi439_restore_original_partition_table.zip
+      run: |
+        cd Mi439_restore_original_partition_table
+        zip -r ../Mi439_restore_original_partition_table.zip ./*
+      shell: bash
 
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: |
-            Mi439_repartition.zip
-            Mi439_restore_original_partition_table.zip
-          asset_name: |
-            Mi439_repartition.zip
-            Mi439_restore_original_partition_table.zip
-          asset_content_type: application/zip
+    - name: Upload Mi439_repartition.zip
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: Mi439_repartition.zip
+        asset_name: Mi439_repartition.zip
+        asset_content_type: application/zip
+        
+    - name: Upload Mi439_restore_original_partition_table.zip
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: Mi439_restore_original_partition_table.zip
+        asset_name: Mi439_restore_original_partition_table.zip
+        asset_content_type: application/zip
