@@ -12,17 +12,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Create Repartition ZIP
         run: |
           cd Mi439_repartition
           zip -r ../Mi439_repartition.zip ./*
+
       - name: Create Restore Partition ZIP
         run: |
           cd Mi439_restore_original_partition_table
           zip -r ../Mi439_restore_original_partition_table.zip ./*
-      - name: Go to the project root
-          ls
+
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         with:
