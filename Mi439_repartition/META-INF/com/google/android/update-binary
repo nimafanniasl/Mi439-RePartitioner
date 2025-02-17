@@ -1,0 +1,64 @@
+#!/sbin/sh
+# Redmi 8A Dynamic Repartition Script
+# By Nima Fanniasl (SmartNima.com)
+
+OUTFD=$2
+ZIP=$3
+
+ui_print() {
+  echo "ui_print $1" > /proc/self/fd/$OUTFD
+  echo "ui_print" > /proc/self/fd/$OUTFD
+}
+
+DEVICE="/dev/block/mmcblk0"
+
+# Extract size from filename (default to 6GB if not detected)
+FILENAME=$(basename "$ZIP")
+SIZE_GB=$(echo "$FILENAME" | sed 's/Mi439_repartition_//;s/GB\.zip//' | grep -E '^[0-9]+$')
+[ -z "$SIZE_GB" ] && SIZE_GB=6
+
+# Android GUIDs (Verified from AOSP)
+SYSTEM_GUID="97D7B011-54DA-4835-B3C4-917AD6E73D74"
+VENDOR_GUID="5E7A150D-840F-45A9-9254-9850E1E50B33"
+USERDATA_GUID="1B81E7E6-F50D-419B-A739-2AEEF8DA3335"
+
+ui_print "Mi439 Repartitioner"
+ui_print "- By Nima Fanniasl (SmartNima.com - @NimaFanniasl)"
+ui_print "- Detected size: ${SIZE_GB}GB"
+ui_print ""
+
+ui_print "[1/6] Deleting old partitions..."
+sgdisk --delete=62 "$DEVICE"  # userdata
+sgdisk --delete=61 "$DEVICE"  # cust
+sgdisk --delete=60 "$DEVICE"  # vendor
+sgdisk --delete=59 "$DEVICE"  # system
+
+ui_print "[2/6] Creating ${SIZE_GB}GB system..."
+sgdisk --new=59:3014656:+${SIZE_GB}G --change-name=59:system --typecode=59:"$SYSTEM_GUID" "$DEVICE"
+
+ui_print "[3/6] Creating 1GB vendor..."
+sgdisk --new=60:0:+1G --change-name=60:vendor --typecode=60:"$VENDOR_GUID" "$DEVICE"
+
+ui_print "[4/6] Allocating remaining space to userdata..."
+sgdisk --new=62:0:0 --change-name=62:userdata --typecode=62:"$USERDATA_GUID" "$DEVICE"
+
+ui_print "[5/6] Formatting partitions..."
+umount /system /vendor /data 2>/dev/null
+
+# Format system
+mke2fs -t ext4 -b 4096 -L system -m 0 /dev/block/mmcblk0p59
+
+# Format vendor
+mke2fs -t ext4 -b 4096 -L vendor -m 0 /dev/block/mmcblk0p60
+
+# Format userdata
+mke2fs -t ext4 -b 4096 -L userdata -m 0 /dev/block/mmcblk0p62
+
+ui_print "[6/6] Verifying layout..."
+ui_print "Final partition table:"
+sgdisk --print "$DEVICE" | tail -3 | while read LINE; do ui_print "$LINE"; done
+
+ui_print "Operation completed successfully. Reboot to Recovery and Enjoy!"
+sleep 2
+
+exit 0

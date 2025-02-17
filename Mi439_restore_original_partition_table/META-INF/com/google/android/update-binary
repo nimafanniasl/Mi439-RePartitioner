@@ -1,0 +1,47 @@
+#!/sbin/sh
+
+# TWRP Flashable ZIP Shell Script
+# Restores partition table from sgdisk backup
+
+OUTFD=$2
+ZIPFILE=$3
+
+ui_print() {
+  echo -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
+}
+
+abort() {
+  ui_print "Error: $1"
+  exit 1
+}
+
+# Set up working environment
+tmp_dir=/tmp/partition_restore
+mkdir -p $tmp_dir
+
+ui_print "Mi439 Partition Table Restorer"
+ui_print "- By Nima Fanniasl (SmartNima.com - @NimaFanniasl)"
+
+# Extract partition table backup
+ui_print "Extracting partition table backup..."
+unzip -o "$ZIPFILE" "olivelite_partition_table.img" -d "$tmp_dir" || abort "Failed to extract backup"
+
+# Verify extraction
+[ -f "$tmp_dir/olivelite_partition_table.img" ] || abort "Backup file not found"
+
+# Unmount all partitions
+ui_print "Unmounting partitions..."
+for mount in /system /vendor /product /odm /data /cache; do
+  umount $mount 2>/dev/null
+done
+
+# Restore partition table
+ui_print "Restoring partition table..."
+/sbin/sgdisk --load-backup="$tmp_dir/olivelite_partition_table.img" /dev/block/mmcblk0 || abort "sgdisk failed"
+
+# Cleanup
+ui_print "Cleaning up..."
+rm -rf $tmp_dir
+
+ui_print "Restore complete! Reboot recovery."
+exit 0
