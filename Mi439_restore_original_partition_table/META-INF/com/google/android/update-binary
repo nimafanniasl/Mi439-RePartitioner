@@ -1,47 +1,71 @@
 #!/sbin/sh
-
-# TWRP Flashable ZIP Shell Script
-# Restores partition table from sgdisk backup
+# Mi439 Partition Table Restore Script
+# By Nima Fanniasl (SmartNima.com)
 
 OUTFD=$2
-ZIPFILE=$3
+ZIP=$3
 
 ui_print() {
-  echo -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
+  echo "ui_print $1" > /proc/self/fd/$OUTFD
+  echo "ui_print" > /proc/self/fd/$OUTFD
 }
 
-abort() {
-  ui_print "Error: $1"
-  exit 1
-}
+DEVICE="/dev/block/mmcblk0"
 
-# Set up working environment
-tmp_dir=/tmp/partition_restore
-mkdir -p $tmp_dir
+# Original Android GUIDs from device
+SYSTEM_GUID="FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"  # system
+VENDOR_GUID="FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"  # vendor
+CUST_GUID="FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"     # cust
+USERDATA_GUID="FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF" # userdata
 
-ui_print "Mi439 Partition Table Restorer"
-ui_print "- By Nima Fanniasl (SmartNima.com - @NimaFanniasl)"
+ui_print "Mi439 Partition Restorer"
+ui_print "- Restoring stock partition table..."
+ui_print "- By Nima Fanniasl (SmartNima.com)"
 
-# Extract partition table backup
-ui_print "Extracting partition table backup..."
-unzip -o "$ZIPFILE" "olivelite_partition_table.img" -d "$tmp_dir" || abort "Failed to extract backup"
+# Delete modified partitions
+ui_print "[1/4] Removing modified partitions..."
+sgdisk --delete=61 "$DEVICE"  # userdata
+sgdisk --delete=60 "$DEVICE"  # vendor
+sgdisk --delete=59 "$DEVICE"  # system
 
-# Verify extraction
-[ -f "$tmp_dir/olivelite_partition_table.img" ] || abort "Backup file not found"
+# Recreate original partitions with exact sectors
+ui_print "[2/4] Recreating stock partitions..."
+sgdisk --new=59:3014656:11403263 --change-name=59:system --typecode=59:"$SYSTEM_GUID" "$DEVICE"
+sgdisk --new=60:11403264:13500415 --change-name=60:vendor --typecode=60:"$VENDOR_GUID" "$DEVICE"
+sgdisk --new=61:13500416:15204351 --change-name=61:cust --typecode=61:"$CUST_GUID" "$DEVICE"
+sgdisk --new=62:0:0 --change-name=62:userdata --typecode=62:"$USERDATA_GUID" "$DEVICE"
+# Format partitions
+ui_print "[3/4] Formatting partitions..."
+umount /system /vendor /data 2>/dev/null
 
-# Unmount all partitions
-ui_print "Unmounting partitions..."
-for mount in /system /vendor /product /odm /data /cache; do
-  umount $mount 2>/dev/null
+# System (4GB)
+mke2fs -t ext4 -b 4096 -L system -m 0 /dev/block/mmcblk0p59
+
+# Vendor (1GB)
+mke2fs -t ext4 -b 4096 -L vendor -m 0 /dev/block/mmcblk0p60
+
+# Cust (832MB)
+mke2fs -t ext4 -b 4096 -L cust -m 0 /dev/block/mmcblk0p61
+
+# Userdata
+mke2fs -t ext4 -b 4096 -L userdata -m 0 /dev/block/mmcblk0p62
+
+# Verify filesystems
+ui_print "[4/4] Verifying partitions..."
+e2fsck -fy /dev/block/mmcblk0p59
+e2fsck -fy /dev/block/mmcblk0p60
+e2fsck -fy /dev/block/mmcblk0p61
+e2fsck -fy /dev/block/mmcblk0p62
+
+ui_print "Restoration complete!"
+ui_print "Original partition layout restored:"
+
+sgdisk --print "$DEVICE" | tail -4 | while read LINE; do
+  ui_print "$LINE"
 done
 
-# Restore partition table
-ui_print "Restoring partition table..."
-/sbin/sgdisk --load-backup="$tmp_dir/olivelite_partition_table.img" /dev/block/mmcblk0 || abort "sgdisk failed"
+ui_print "Reboot recovery to apply changes!"
+sleep 2
+reboot recovery
 
-# Cleanup
-ui_print "Cleaning up..."
-rm -rf $tmp_dir
-
-ui_print "Restore complete! Reboot recovery."
 exit 0
